@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DAAD Masterstipendium - Chancenrechner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Plan: Ergebnisband oben, darunter Karten nach Themen (links) und mitlaufende Zerlegung (rechts). Blau = Vorauswahl, Violett = Interview. */
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --ink: #18202e;
+  --muted: #5d6677;
+  --line: #d9dde5;
+  --accent: #1f4fa3;
+  --accent-soft: #e3eaf7;
+  --second: #7a4a9c;
+  --second-soft: #efe6f6;
+  --pos: #1d7a52;
+  --neg: #b23a3a;
+  --font-display: "IBM Plex Serif", Georgia, serif;
+  --font-body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11151d; --surface: #1a202b; --ink: #e6e9ef; --muted: #9aa3b4; --line: #2d3442;
+    --accent: #7fa6ec; --accent-soft: #233150; --second: #c49be3; --second-soft: #35284a;
+    --pos: #5cc796; --neg: #ec8080; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11151d; --surface: #1a202b; --ink: #e6e9ef; --muted: #9aa3b4; --line: #2d3442;
+  --accent: #7fa6ec; --accent-soft: #233150; --second: #c49be3; --second-soft: #35284a;
+  --pos: #5cc796; --neg: #ec8080; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
+header { padding: 26px 0 8px; display: grid; gap: 6px; }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 28px; margin: 0; }
+header p { margin: 0; color: var(--muted); }
+.results { position: sticky; top: 0; z-index: 3; background: var(--bg); padding: 12px 0; }
+.res { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: center; box-shadow: 0 2px 10px rgba(20, 30, 50, .05); }
+@media (max-width: 780px) { .res { grid-template-columns: 1fr 1fr; gap: 14px; } .res .side { grid-column: 1 / -1; } .big { font-size: 40px !important; } }
+.stage { display: grid; gap: 2px; }
+.stage .k { font-family: var(--font-display); font-size: 19px; color: var(--ink); font-weight: 600; line-height: 1.25; }
+.stage .k small { display: block; font-family: var(--font-body); font-size: 13px; font-weight: 400; color: var(--muted); margin-top: 2px; }
+.big { font-family: var(--font-display); font-size: 54px; font-weight: 600; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.big.v { color: var(--accent); }
+.big.t { color: var(--second); }
+.range { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.side { display: grid; grid-template-columns: 1fr auto; gap: 3px 12px; font-size: 14px; font-variant-numeric: tabular-nums; }
+.side span:nth-child(even) { font-family: var(--font-mono); text-align: right; }
+.side .reset { grid-column: 1 / -1; justify-self: start; margin-top: 6px; }
+button { font: inherit; font-size: 13px; padding: 4px 12px; border-radius: 99px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; }
+button:hover { border-color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 22px; align-items: start; padding: 4px 0 24px; }
+@media (max-width: 940px) { main { grid-template-columns: 1fr; } .aside { position: static !important; } }
+.inputs { display: grid; gap: 14px; }
+section.group { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px 6px; }
+h2 { font-family: var(--font-display); font-size: 17px; font-weight: 600; margin: 0 0 4px; }
+.field { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 14px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); }
+.field:first-of-type { border-top: 0; }
+.field > label, .field > .lbl { font-weight: 500; }
+.meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; font-size: 12.5px; color: var(--muted); align-items: center; }
+.pill { display: inline-flex; gap: 4px; align-items: baseline; padding: 1px 8px; border-radius: 99px; white-space: nowrap; }
+.pill.avg { border: 1px solid var(--line); }
+.pill.v { background: var(--accent-soft); color: var(--accent); }
+.pill.i { background: var(--second-soft); color: var(--second); }
+.pill b { font-family: var(--font-mono); font-weight: 500; }
+.est { color: var(--muted); font-size: 12px; }
+input[type="number"], select { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; }
+input[type="number"] { width: 96px; text-align: right; font-variant-numeric: tabular-nums; }
+select { max-width: 260px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg label { padding: 4px 11px; font-size: 13.5px; cursor: pointer; border-left: 1px solid var(--line); color: var(--muted); user-select: none; }
+.seg label:first-of-type { border-left: 0; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg input:checked + span { color: var(--ink); font-weight: 600; }
+.seg label:has(input:checked) { background: var(--accent-soft); }
+.seg label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
+.changed { border-color: var(--accent) !important; box-shadow: 0 0 0 1px var(--accent); }
+.aside { position: sticky; top: 168px; display: grid; gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 8px; }
+.card h3 { font-family: var(--font-display); font-size: 16px; font-weight: 600; margin: 0; }
+.sub { color: var(--muted); font-size: 13px; }
+.tabs { display: flex; gap: 6px; }
+.tabs button[aria-pressed="true"] { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+.tabs button#tabI[aria-pressed="true"] { background: var(--second); border-color: var(--second); }
+.bars { display: grid; gap: 4px; }
+.bar { display: grid; grid-template-columns: 140px 1fr; gap: 8px; align-items: center; font-size: 12.5px; }
+.bar .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar .track { height: 12px; position: relative; background: linear-gradient(var(--line), var(--line)) center / 1px 100% no-repeat; }
+.bar .seg2 { position: absolute; top: 1px; bottom: 1px; border-radius: 2px; }
+.legend { display: grid; gap: 6px; font-size: 13px; }
+.legend div { display: grid; grid-template-columns: 128px 1fr; gap: 8px; align-items: center; }
+.legend .pill { justify-self: start; }
+section.more { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; display: grid; gap: 10px; margin-bottom: 24px; }
+section.more ul { margin: 0; padding-left: 20px; display: grid; gap: 5px; font-size: 14px; max-width: 95ch; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+th, td { padding: 4px 8px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+th { color: var(--muted); font-weight: 600; }
+td.num, th.num { text-align: right; font-family: var(--font-mono); }
+.ok { color: var(--pos); } .warn { color: var(--neg); }
+details summary { cursor: pointer; font-weight: 500; }
+
+main { display: block; padding: 4px 0 18px; }
+.inputs { display: grid; gap: 14px; }
+.legendrow { margin-bottom: 18px; }
+.legendrow .legend { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.drivers { margin-top: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px 16px; }
+.drivers summary { cursor: pointer; font-weight: 500; font-size: 14px; }
+.drv { display: grid; gap: 8px; padding: 8px 0 6px; max-height: 42vh; overflow-y: auto; }
+.drv .bars { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); column-gap: 28px; }
+
+.gauge { position: relative; height: 14px; background: var(--bg); border: 1px solid var(--line); border-radius: 99px; margin: 8px 0 12px; }
+.gauge .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; transition: width .2s; }
+.gauge.v .fill { background: var(--accent); }
+.gauge.t .fill { background: var(--second); }
+.gauge .mark { position: absolute; top: -5px; bottom: -5px; width: 2px; margin-left: -1px; background: var(--ink); border-radius: 1px; }
+.gauge .mark::after { content: ""; position: absolute; left: -4px; bottom: -7px; border: 5px solid transparent; border-bottom-color: var(--ink); }
+@media (prefers-reduced-motion: reduce) { .gauge .fill { transition: none; } }
+
+/* Feinschliff */
+body { background: radial-gradient(1200px 380px at 15% -80px, var(--accent-soft), transparent 70%), var(--bg); background-attachment: local; }
+header { padding: 34px 0 12px; }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-size: 34px; letter-spacing: -.01em; }
+.results { background: var(--bg); }
+.res { padding: 10px; gap: 10px; border-radius: 16px; box-shadow: 0 8px 28px rgba(20, 30, 60, .08); }
+.stage { padding: 14px 18px 10px; border-radius: 12px; }
+.res .stage:first-child { background: linear-gradient(180deg, var(--accent-soft), transparent 85%); }
+.res .stage:nth-child(2) { background: linear-gradient(180deg, var(--second-soft), transparent 85%); }
+.gauge { background: var(--surface); }
+section.group { border-radius: 14px; padding: 18px 22px 8px; box-shadow: 0 1px 3px rgba(20, 30, 60, .04); }
+section.group h2 { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+section.group h2::before { content: ""; width: 4px; height: 18px; border-radius: 2px; background: linear-gradient(var(--accent), var(--second)); }
+.field { padding: 11px 8px; margin: 0 -8px; border-radius: 8px; transition: background .15s; }
+.field:hover { background: var(--bg); }
+input[type="number"], select { background: var(--surface); border-radius: 10px; padding: 6px 10px; transition: border-color .15s, box-shadow .15s; }
+input[type="number"]:hover, select:hover { border-color: var(--accent); }
+select { appearance: none; -webkit-appearance: none; padding-right: 30px; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 15px) 52%, calc(100% - 10px) 52%; background-size: 5px 5px; background-repeat: no-repeat; }
+.seg { border-radius: 10px; background: var(--surface); }
+.seg label { padding: 5px 14px; transition: background .15s; }
+.seg label:has(input:checked) { background: var(--accent); }
+.seg input:checked + span { color: #fff; }
+.pill { padding: 2px 9px; }
+.changed { box-shadow: 0 0 0 3px var(--accent-soft) !important; }
+.drivers { border-radius: 14px; }
+.legendrow .card, section.more { border-radius: 14px; }
+@media (prefers-reduced-motion: reduce) { .field, .seg label, input, select { transition: none; } }
+
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.act { font-size: 14px; padding: 7px 16px; font-weight: 500; background: var(--surface); }
+.act.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.act.primary:hover { filter: brightness(1.08); }
+.modal { position: fixed; inset: 0; z-index: 10; background: rgba(12, 18, 30, .45); display: grid; place-items: center; padding: 16px; }
+.modal[hidden] { display: none; }
+.mbox { background: var(--surface); color: var(--ink); border-radius: 16px; width: min(680px, 100%); max-height: calc(100% - 32px); overflow-y: auto; padding: 20px 24px; display: grid; gap: 12px; box-shadow: 0 20px 60px rgba(0, 0, 0, .25); }
+.mhead { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.mhead h2 { margin: 0; font-size: 21px; }
+.mbox h3 { font-family: var(--font-display); font-size: 16px; margin: 6px 0 0; }
+.x { font-size: 20px; line-height: 1; padding: 4px 10px; }
+.levers { display: grid; gap: 6px; }
+.lever { display: grid; grid-template-columns: minmax(0, 1fr) 150px 64px; gap: 10px; align-items: center; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; font-size: 14px; }
+.lever .lt { height: 8px; background: var(--bg); border-radius: 99px; overflow: hidden; }
+.lever .lt span { display: block; height: 100%; background: var(--pos); border-radius: 99px; }
+.lever .lg { font-family: var(--font-mono); text-align: right; color: var(--pos); font-weight: 500; }
+@media (max-width: 560px) { .lever { grid-template-columns: 1fr 64px; } .lever .lt { display: none; } }
+.leverall { font-size: 14px; padding: 10px 12px; border-radius: 10px; background: var(--accent-soft); }
+.mbox h3.good { color: var(--pos); } .mbox h3.bad { color: var(--neg); }
+.tips { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 14px; }
+.mbox textarea { width: 100%; font-family: var(--font-mono); font-size: 13px; line-height: 1.5; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; resize: vertical; }
+.mfoot { display: flex; gap: 12px; align-items: center; }
+
+/* ===== Richtung: Bewerbungsakte mit Textmarker. Kobalt = Vorauswahl, Himbeere = Interview/Gesamt, Gelb = Markierung. Harte Versatzschatten. ===== */
+:root {
+  --bg: #eceef2; --surface: #ffffff; --ink: #121633; --muted: #545b75; --line: #121633;
+  --hair: #d5d9e3; --accent: #2340d6; --accent-soft: #e4e9ff; --second: #d93a74; --second-soft: #ffe4ee;
+  --mark: #ffe14d; --pos: #12805c; --neg: #c8324a;
+  --font-display: "Bricolage Grotesque", "Arial Black", sans-serif;
+  --font-body: "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "DM Mono", ui-monospace, Menlo, monospace;
+  --shadow: 4px 4px 0 var(--ink);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1120; --surface: #181c33; --ink: #eef0ff; --muted: #a3a9c6; --line: #eef0ff; --hair: #2c3254;
+    --accent: #7d92ff; --accent-soft: #232b5c; --second: #ff7aa8; --second-soft: #4a2036; --mark: #e8c93a;
+    --pos: #4fd1a0; --neg: #ff7b8f; --shadow: 4px 4px 0 #000; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1120; --surface: #181c33; --ink: #eef0ff; --muted: #a3a9c6; --line: #eef0ff; --hair: #2c3254;
+  --accent: #7d92ff; --accent-soft: #232b5c; --second: #ff7aa8; --second-soft: #4a2036; --mark: #e8c93a;
+  --pos: #4fd1a0; --neg: #ff7b8f; --shadow: 4px 4px 0 #000; color-scheme: dark;
+}
+body { font-size: 15.5px; background: radial-gradient(var(--hair) 1px, transparent 1.2px) 0 0 / 18px 18px, var(--bg); }
+header { padding: 40px 0 16px; gap: 10px; }
+.eyebrow { display: inline-block; justify-self: start; font-family: var(--font-mono); font-size: 12px; font-weight: 500; letter-spacing: .06em; color: var(--ink); background: var(--mark); padding: 3px 10px; border: 1.5px solid var(--ink); border-radius: 4px; transform: rotate(-1.2deg); }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(32px, 5vw, 54px); line-height: .98; letter-spacing: -.035em; }
+header p { font-size: 15.5px; max-width: none; }
+.results { background: var(--bg); padding: 14px 0 12px; }
+.res { background: var(--surface); border: 2px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 8px; gap: 8px; }
+.res .stage:first-child, .res .stage:nth-child(2) { background: none; }
+.stage { padding: 14px 18px 8px; border-radius: 10px; }
+.res .stage:first-child { border-right: 2px dashed var(--hair); border-radius: 10px 0 0 10px; }
+.stage .k { font-family: var(--font-display); font-weight: 700; font-size: 21px; letter-spacing: -.01em; }
+.stage .k small { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .03em; text-transform: uppercase; margin-top: 4px; }
+.big { font-family: var(--font-display); font-weight: 800; font-size: clamp(54px, 7vw, 84px); letter-spacing: -.04em; line-height: .95; margin-top: 6px; }
+.big.v { color: var(--accent); } .big.t { color: var(--second); }
+.gauge { height: 18px; border: 2px solid var(--line); border-radius: 4px; background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), var(--hair) calc(10% - 1px) 10%), var(--surface); margin: 10px 0 14px; }
+.gauge .fill { border-radius: 0; }
+.gauge.v .fill { background: repeating-linear-gradient(-45deg, var(--accent) 0 8px, color-mix(in srgb, var(--accent) 82%, #fff) 8px 16px); }
+.gauge.t .fill { background: repeating-linear-gradient(-45deg, var(--second) 0 8px, color-mix(in srgb, var(--second) 82%, #fff) 8px 16px); }
+.gauge .mark { width: 3px; background: var(--ink); top: -7px; bottom: -7px; }
+.gauge .mark::after { border-bottom-color: var(--ink); bottom: -9px; left: -3.5px; }
+.range { font-family: var(--font-mono); font-size: 12px; }
+.actions { margin: 4px 0 14px; gap: 10px; }
+.act { font-family: var(--font-body); font-weight: 600; font-size: 14.5px; padding: 9px 18px; border: 2px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); box-shadow: 3px 3px 0 var(--ink); transition: transform .12s, box-shadow .12s; }
+.act:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--ink); filter: none; }
+.act:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+.act.primary { background: var(--mark); color: #121633; border-color: var(--line); }
+.drivers { border: 2px solid var(--line); border-radius: 12px; box-shadow: 3px 3px 0 var(--ink); }
+.drivers summary { font-weight: 600; }
+section.group { border: 2px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 20px 24px 10px; }
+section.group h2 { font-family: var(--font-display); font-weight: 700; font-size: 22px; letter-spacing: -.02em; margin-bottom: 8px; display: inline-block; }
+section.group h2::before { content: none; }
+
+.field { border-top: 1.5px dashed var(--hair); }
+.field:hover { background: color-mix(in srgb, var(--mark) 18%, transparent); }
+.field > label, .field > .lbl { font-weight: 600; font-size: 15.5px; }
+.pill { font-family: var(--font-mono); font-size: 11.5px; border-radius: 4px; padding: 2px 7px; }
+.pill.avg { border: 1.5px solid var(--hair); }
+.pill.v { background: var(--accent-soft); color: var(--accent); }
+.pill.i { background: var(--second-soft); color: var(--second); }
+.pill b { font-weight: 500; }
+input[type="number"], select { border: 2px solid var(--line); border-radius: 8px; font-weight: 600; background-color: var(--surface); }
+input[type="number"]:focus, select:focus { box-shadow: 3px 3px 0 var(--accent); outline: none; }
+.seg { border: 2px solid var(--line); border-radius: 8px; }
+.seg label { border-left: 2px solid var(--line); font-weight: 600; color: var(--muted); padding: 5px 15px; }
+.seg label:has(input:checked) { background: var(--ink); }
+.seg input:checked + span { color: var(--surface); }
+.changed { box-shadow: 3px 3px 0 var(--mark), 0 0 0 0 transparent !important; border-color: var(--line) !important; }
+.legendrow .card, section.more { border: 2px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); }
+.card h3, section.more h2 { font-family: var(--font-display); font-weight: 700; letter-spacing: -.01em; }
+.mbox { border: 2px solid var(--line); border-radius: 14px; box-shadow: 6px 6px 0 var(--ink); }
+.mhead h2 { font-family: var(--font-display); font-weight: 800; font-size: 26px; letter-spacing: -.02em; }
+.mbox h3 { font-family: var(--font-display); font-weight: 700; font-size: 18px; }
+.x { border: 2px solid var(--line); border-radius: 8px; }
+.tabs button { border: 2px solid var(--line); font-weight: 600; }
+.tabs button[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.tabs button#tabI[aria-pressed="true"] { background: var(--second); border-color: var(--line); color: #fff; }
+.big { animation: pop .5s cubic-bezier(.2, .9, .3, 1.3) both; }
+@keyframes pop { from { transform: translateY(8px) scale(.96); opacity: .4; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .big { animation: none; } .act { transition: none; } }
+@media (max-width: 780px) { .res .stage:first-child { border-right: 0; border-bottom: 2px dashed var(--hair); border-radius: 10px 10px 0 0; } .res { grid-template-columns: 1fr !important; } }
+
+/* Kompakte, fixierte Ergebnisleiste */
+.results { padding: 8px 0 8px; }
+.res { padding: 4px; }
+.stage { grid-template-columns: minmax(0, 1fr) auto; align-items: end; column-gap: 14px; padding: 8px 14px 4px; }
+.stage .k { grid-column: 1; grid-row: 1; font-size: 18px; align-self: center; }
+.stage .k small { font-size: 10.5px; margin-top: 2px; }
+.stage .big { grid-column: 2; grid-row: 1; font-size: clamp(38px, 4.6vw, 52px); margin-top: 0; }
+.stage .gauge { grid-column: 1 / -1; height: 12px; margin: 6px 0 9px; }
+.stage .gauge .mark { top: -5px; bottom: -5px; }
+.stage .range { grid-column: 1 / -1; font-size: 11px; }
+.drivers { margin-top: 6px; padding: 5px 14px; }
+
+.note { margin: 0 0 14px; padding: 10px 14px; font-size: 14px; color: var(--ink); background: var(--surface); border: 2px dashed var(--muted); border-radius: 10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>DAAD Masterstipendium - Chancenrechner</h1>
+    <p>Der Rechner schätzt, wie wahrscheinlich du beim DAAD erst zum Interview eingeladen wirst und dann das Stipendium bekommst. Grundlage ist die DAAD-Studie „Determinanten der Auswahl“ (Linda Kurze, 2013). Sie hat 504 echte Bewerbungen um DAAD-Jahresstipendien für die USA und Kanada aus 2008–2010 ausgewertet und mit Regressionsmodellen gemessen, welche Merkmale die Auswahl beeinflussen. Der Rechner nutzt genau diese Modelle. Voreingestellt ist ein durchschnittlicher Bewerber; ändere, was auf dich zutrifft.</p>
+  </header>
+
+  <div class="results" aria-live="polite">
+    <div class="res">
+      <div class="stage"><span class="k">Einladung zum Interview<small>Stufe 1: Vorauswahl auf Papier</small></span><span class="big v" id="pV">–</span><div class="gauge v" aria-hidden="true"><div class="fill" id="gV"></div><div class="mark" style="left:54%"></div></div><span class="range" id="pVr">▲ Durchschnitt aller Bewerber: 54 %</span></div>
+      <div class="stage"><span class="k">Stipendium insgesamt<small>Stufe 1 und Interview bestanden</small></span><span class="big t" id="pT">–</span><div class="gauge t" aria-hidden="true"><div class="fill" id="gT"></div><div class="mark" style="left:29%"></div></div><span class="range" id="pTr">▲ Durchschnitt aller Bewerber: 29 %</span></div>
+    </div>
+    <details class="drivers" id="drivers">
+      <summary>Was deine Chance bewegt</summary>
+      <div class="drv">
+        <div class="tabs" role="group" aria-label="Stufe">
+          <button type="button" id="tabV" aria-pressed="true">Vorauswahl</button>
+          <button type="button" id="tabI" aria-pressed="false">Interview</button>
+        </div>
+        <div class="sub" id="barsCap"></div>
+        <div class="bars" id="bars"></div>
+      </div>
+    </details>
+  </div>
+
+  <div class="actions">
+      <button type="button" class="act primary" id="openLever">Was bringt dir am meisten?</button>
+      <button type="button" class="act" id="openShare">Profil teilen</button>
+  </div>
+  <main>
+    <div class="inputs" id="inputs"></div>
+  </main>
+  <div class="legendrow">
+    <div class="card">
+        <h3>So liest du die Angaben</h3>
+        <div class="legend">
+          <div><span class="pill avg">Ø 1,80</span> Durchschnitt der Bewerber in der Studie</div>
+          <div><span class="pill v">Vorauswahl <b>×2,0</b></span> verdoppelt die Chance auf eine Einladung</div>
+          <div><span class="pill i">Interview <b>×0,5</b></span> halbiert die Chance im Interview</div>
+        </div>
+        <div class="sub">„Unbekannt“ (bei Gutachter, Kommission und Uhrzeit) rechnet mit dem Durchschnitt der Studie.</div>
+      </div>
+  </div>
+
+
+  <p class="note"><b>Hinweis:</b> Das Ergebnis ist nur eine grobe Prognose, keine Zusage. Die Daten sind über 15 Jahre alt und nicht repräsentativ für heutige Bewerber. Nicht alle Faktoren sind statistisch gesichert. Am Ende entscheidet eine Kommission im Einzelfall.</p>
+  <section class="more">
+    <h2>Methode und Grenzen</h2>
+    <ul>
+      <li><b>Modelle:</b> Die Einladung schätzt die logistische Regression 2-III der Studie (Tabelle 11), das Interview die Regression 3-V (Tabelle 37). Die Punkte aus der Vorauswahl, die ins Interview eingehen, kommen aus der linearen Regression 2-III (Anhang II). Stipendium insgesamt = Einladung × Interview.</li>
+      <li><b>Kalibrierung:</b> Die gedruckten Konstanten sind gerundet. Das Niveau ist deshalb an den Wahrscheinlichkeiten ausgerichtet, die die Studie selbst veröffentlicht.</li>
+      <li><b>Voreinstellung:</b> ein durchschnittlicher Bewerber mit <span id="meanV"></span> für die Einladung und <span id="meanT"></span> insgesamt; tatsächlich waren es 54 % und 29 %.</li>
+      <li><b>Fest auf dem Durchschnitt:</b> angestrebter Abschluss, Studiengebühren, Region sowie Gutachter, Kommission und Uhrzeit des Interviews. „Ø geschätzt“ markiert Durchschnitte, die die Studie nicht nennt.</li>
+      <li><b>Grenzen:</b> Die Daten stammen aus Jahresstipendien für die USA und Kanada (2008–2010), nicht aus dem heutigen Masterstipendium. Die Faktoren zeigen Zusammenhänge, keine Ursachen. Das Ergebnis ist eine grobe Orientierung, keine Prognose.</li>
+    </ul>
+  </section>
+</div>
+
+
+<div class="modal" id="mLever" hidden>
+  <div class="mbox" role="dialog" aria-modal="true" aria-labelledby="mLeverT">
+    <div class="mhead"><h2 id="mLeverT">Was bringt dir am meisten?</h2><button type="button" class="x" data-close aria-label="Schließen">×</button></div>
+    <p class="sub">Die wichtigsten Ergebnisse der DAAD-Studie für kommende Bewerber.</p>
+    <h3 class="good">Das bringt viel</h3>
+    <ul class="tips">
+      <li><b>Gute Noten im Studium:</b> In beiden Stufen der stärkste Faktor. Eine Note schlechter senkt die Chance etwa auf ein Sechstel.</li>
+      <li><b>Das richtige Gutachten:</b> von einer Professorin oder einem Professor (Chance ×5,2), die oder der dich gut kennt (×8,3).</li>
+      <li><b>Ein Sprachtest wie der TOEFL:</b> erhöht die Einladungschance deutlich (×4,8).</li>
+      <li><b>Glaubwürdiges Engagement:</b> mehrere Bereiche helfen bei der Einladung, echte Verantwortung und Zeitaufwand im Interview (×6,2).</li>
+      <li><b>Ein durchdachtes Vorhaben:</b> Kontakt zur Gasthochschule (×2,4 im Interview) und weitere Stipendienbewerbungen (×2,0).</li>
+    </ul>
+    <h3 class="bad">Das bringt wenig oder nichts</h3>
+    <ul class="tips">
+      <li><b>Prestige der Gasthochschule:</b> Ein Top-Ranking oder die Ivy League verschafft keinen Vorteil.</li>
+      <li><b>Bereich des Engagements:</b> Ob Sport, Soziales oder Kultur, die Gutachter bevorzugen keinen Bereich.</li>
+      <li><b>Berufsausbildung und Berufserfahrung:</b> kein messbarer Einfluss auf die Auswahl.</li>
+      <li><b>Hohe Sprachpunkte allein:</b> wirken nur schwach (×1,05 je Punkt); wichtiger ist, überhaupt einen Test einzureichen.</li>
+      <li><b>Geschlecht und BAföG-Bezug:</b> spielen für die Entscheidung keine Rolle.</li>
+    </ul>
+  </div>
+</div>
+<div class="modal" id="mShare" hidden>
+  <div class="mbox" role="dialog" aria-modal="true" aria-labelledby="mShareT">
+    <div class="mhead"><h2 id="mShareT">Profil teilen</h2><button type="button" class="x" data-close aria-label="Schließen">×</button></div>
+    <p class="sub">Dein Steckbrief zum Kopieren, etwa für Foren oder Gruppenchats.</p>
+    <textarea id="shareText" rows="11" readonly></textarea>
+    <div class="mfoot"><button type="button" class="act primary" id="copyShare">Text kopieren</button><span class="sub" id="copyMsg" aria-live="polite"></span></div>
+  </div>
+</div>
+<script>
+// DAAD-Studie "Determinanten der Auswahl" (Kurze 2013): Modelle als reine Funktionen.
+var DAAD = (function () {
+  "use strict";
+  // Vorauswahl: logistische Regression, Schätzung 2-III (Tabelle 11), Mittelwerte aller Bewerber (Tab. 34, Kap. 3, Tab. 24).
+  // est: Mittelwert in der Studie nicht berichtet, Schätzwert.
+  var V = [
+    ["abi", "Abiturnote", -1.678, 1.802, "***"],
+    ["stud", "Studiennote", -1.855, 1.938, "***"],
+    ["fh", "Fachhochschule", -1.198, 0.082, ""],
+    ["th", "Technische Hochschule", -0.076, 0.154, ""],
+    ["diplom", "Abschluss Diplom", -0.009, 0.568, ""],
+    ["examen", "Abschluss Examen", 0.630, 0.093, ""],
+    ["magister", "Abschluss Magister", 0.672, 0.184, ""],
+    ["anfaenger", "Studienanfänger", -0.416, 0.25, "", "est"],
+    ["sprache", "Sprachkenntnisse", 0.053, 88.613, "**"],
+    ["toefl", "TOEFL eingereicht", 1.574, 0.562, "***"],
+    ["ausb", "Berufsausbildung", -0.183, 0.05, "", "est"],
+    ["zbw", "Zweiter Bildungsweg", 1.250, 0.01, "", "est"],
+    ["jobUni", "Nebenjob nur Hochschule", -0.441, 0.157, ""],
+    ["jobBoth", "Nebenjob Hochschule + extern", 1.581, 0.193, "***"],
+    ["jobExt", "Nebenjob nur extern", -0.311, 0.416, ""],
+    ["bafoeg", "BAföG", -0.424, 0.226, ""],
+    ["sdv", "Studienstiftung", 1.971, 0.060, ""],
+    ["andere", "Andere Stipendienbewerbungen", -0.317, 0.421, ""],
+    ["kontakt", "Kontakt Gasthochschule", 0.525, 0.452, ""],
+    ["fee", "Studiengebühren (Tsd. $)", 0.001, 14.221, "*"],
+    ["austausch", "Austauschprogramm", 0.937, 0.278, "**"],
+    ["privat", "Private Gasthochschule", -0.886, 0.276, "*"],
+    ["top10", "Top-10-Gasthochschule", -0.775, 0.181, "*"],
+    ["canada", "Region Kanada", 0.045, 0.206, ""],
+    ["midwest", "Region US-Midwest", 0.353, 0.131, ""],
+    ["northeast", "Region US-Northeast", 1.267, 0.236, "**"],
+    ["south", "Region US-South", 0.581, 0.177, ""],
+    ["e_pol", "Engagement politisch", -1.013, 0.177, "**"],
+    ["e_jug", "Engagement Jugend/Sport", -0.158, 0.482, ""],
+    ["e_kun", "Engagement Kunst/Kultur", -0.491, 0.228, ""],
+    ["e_soz", "Engagement sozial", -0.329, 0.248, ""],
+    ["e_kir", "Engagement kirchlich", -1.355, 0.143, "**"],
+    ["e_fac", "Engagement Fachschaft", 0.420, 0.212, ""],
+    ["e_sch", "Schülervertretung", 0.336, 0.145, ""],
+    ["e_aus", "Engagement Austausch", -0.225, 0.081, ""],
+    ["eng1", "Genau eine Engagement-Art", 1.198, 0.290, "**"],
+    ["engM", "Mehrere Engagement-Arten", 2.340, 0.516, "***"],
+    ["urteil", "Gesamturteil Gutachten", 0.687, 9.252, "**"],
+    ["prof", "Gutachten von Professor", 1.645, 0.681, "***"],
+    ["kennt", "Gutachter kennt dich gut", 2.121, 0.834, "***"],
+    ["weibl", "Geschlecht weiblich", 0.273, 0.486, ""],
+    ["brille", "Brillenträger", 0.354, 0.178, ""],
+    ["geboren", "In Deutschland geboren", 2.080, 0.919, "***"],
+    ["alter", "Alter", -0.517, 21.87, "***"],
+    ["eltern", "Eltern Akademiker", -0.934, 0.236, "**"],
+    ["gutW", "Gutachterin (weiblich)", 1.350, 0.20, "**", "est"],
+    ["gutAlter", "Alter Gutachter", 0.042, 53.55, "*"]
+  ];
+  // Vorauswahlscore: lineare Regression 2-III (Anhang II), mit Konstante.
+  var S_CONST = 68.452;
+  var S = { abi: -6.777, stud: -5.776, fh: 3.374, th: 0.939, diplom: -5.118, examen: -0.904, magister: -2.315,
+    anfaenger: -5.091, sprache: 0.124, toefl: 4.348, ausb: -0.293, zbw: 1.601, jobUni: -0.045, jobBoth: 2.147,
+    jobExt: -0.781, bafoeg: -1.744, sdv: 3.233, andere: -0.487, kontakt: 3.025, fee: 0, austausch: 1.522,
+    privat: -1.905, top10: 0.585, canada: -0.446, midwest: -0.576, northeast: 0.677, south: 0.447,
+    e_pol: 0.536, e_jug: 1.078, e_kun: -0.518, e_soz: -0.847, e_kir: -1.522, e_fac: 0.905, e_sch: -1.817,
+    e_aus: -1.597, eng1: 2.694, engM: 4.312, urteil: 3.659, prof: 2.795, kennt: 0.190, weibl: -0.544,
+    brille: 0.363, geboren: 2.826, alter: -1.025, eltern: -0.654, gutW: 1.979, gutAlter: 0.025 };
+  // Interview (Endauswahl): logistische Regression 3-V (Tabelle 37), Referenz = Normbewerber Anhang IV.
+  var I = [
+    ["abi", "Abiturnote", -0.084, 1.6, ""],
+    ["stud", "Studiennote", -1.773, 1.7, "***"],
+    ["sprache", "Sprachkenntnisse", 0.021, 90.8, ""],
+    ["sdv", "Studienstiftung", 1.863, 0, "**"],
+    ["andere", "Andere Stipendienbewerbungen", 0.687, 1, "*"],
+    ["kontakt", "Kontakt Gasthochschule", 0.878, 1, "**"],
+    ["fee", "Studiengebühren (Tsd. $)", -0.020, 16.081, ""],
+    ["privat", "Private Gasthochschule", 0.246, 0, ""],
+    ["top10", "Top-10-Gasthochschule", 0.359, 0, ""],
+    ["hoch", "Engagement hoch", 1.822, 0, "*"],
+    ["mittel", "Engagement mittel", 0.699, 0, ""],
+    ["niedrig", "Engagement niedrig", 0.852, 1, ""],
+    ["urteil", "Gesamturteil Gutachten", -0.501, 9.47, ""],
+    ["prof", "Gutachten von Professor", 0.408, 1, ""],
+    ["kennt", "Gutachter kennt dich gut", -0.232, 1, ""],
+    ["weibl", "Geschlecht weiblich", 0.227, 0, ""],
+    ["geboren", "In Deutschland geboren", 0.700, 1, ""],
+    ["alter", "Alter", -0.221, 21.7, ""],
+    ["eltern", "Eltern Akademiker", 0.343, 0, ""],
+    ["kSize", "Kommissionsgröße", -0.059, 4.35, ""],
+    ["kFrauen", "Frauenquote Kommission", 1.447, 0.26, ""],
+    ["kMaenner", "Mehrheit Männer in Kommission", 0.415, 1, ""],
+    ["kAlter", "Durchschnittsalter Kommission", -0.051, 52.42, ""],
+    ["t9", "Interview 9–10 Uhr", -0.125, 0, ""],
+    ["t11", "Interview 11–12 Uhr", -1.377, 1, "**"],
+    ["t12", "Interview 12–13:30 Uhr", -0.222, 0, ""],
+    ["t14", "Interview 14–15 Uhr", 0.351, 0, ""],
+    ["t15", "Interview 15–16 Uhr", -0.981, 0, ""],
+    ["t16", "Interview 16–17 Uhr", 0.240, 0, ""],
+    ["t17", "Interview 17–19 Uhr", -0.341, 0, ""],
+    ["score", "Vorauswahlscore", 0.119, 85.06, "***"]
+  ];
+  // Niveau: Log-Odds am Referenzprofil, verankert an den in der Studie veröffentlichten
+  // vorhergesagten Wahrscheinlichkeiten (Mittel bzw. Spannweite der Anker).
+  var V_REF = 0.50, V_LO = 0.31, V_HI = 0.65;   // Tab. 12, 13, 15, 19, 20, 22, 23, 26
+  var I_REF = 0.79, I_LO = 0.45, I_HI = 1.34;   // Tab. 38, 39, 45, 46, 47, 51
+  var SLOT_MEANS = { t9: 0.134, t10: 0.150, t11: 0.157, t12: 0.154, t14: 0.146, t15: 0.087, t16: 0.083, t17: 0.091 };
+
+  var inv = function (z) { return 1 / (1 + Math.exp(-z)); };
+  function meansV() { var m = {}; V.forEach(function (r) { m[r[0]] = r[3]; }); return m; }
+  function refI() { var m = {}; I.forEach(function (r) { m[r[0]] = r[3]; }); return m; }
+  function lin(table, x, ref) {
+    var parts = table.map(function (r) {
+      var v = (x[r[0]] === undefined) ? r[3] : x[r[0]];
+      return { key: r[0], name: r[1], sig: r[4], c: r[2] * (v - r[3]) };
+    });
+    return { parts: parts, shift: parts.reduce(function (a, p) { return a + p.c; }, 0) };
+  }
+  function score(x) {
+    var s = S_CONST, m = meansV();
+    Object.keys(S).forEach(function (k) { s += S[k] * (x[k] === undefined ? m[k] : x[k]); });
+    return s;
+  }
+  function vorauswahl(x) {
+    var l = lin(V, x);
+    return { p: inv(V_REF + l.shift), lo: inv(V_LO + l.shift), hi: inv(V_HI + l.shift), parts: l.parts };
+  }
+  function interview(x) {
+    var l = lin(I, x);
+    return { p: inv(I_REF + l.shift), lo: inv(I_LO + l.shift), hi: inv(I_HI + l.shift), parts: l.parts };
+  }
+
+  // v: Merkmale der Vorauswahl, i: Merkmale des Interviews (ohne Score); score wird aus v berechnet, falls nicht vorgegeben
+  function evaluateVec(v, i, scoreOverride) {
+    var sc = score(v), used = scoreOverride == null ? Math.max(0, Math.min(100, sc)) : scoreOverride;
+    var ii = {}; Object.keys(i).forEach(function (k) { ii[k] = i[k]; }); ii.score = used;
+    var pv = vorauswahl(v), pi = interview(ii);
+    return { pv: pv, pi: pi, score: sc, scoreUsed: used, total: pv.p * pi.p, totalLo: pv.lo * pi.lo, totalHi: pv.hi * pi.hi };
+  }
+  // Nachrechnung veröffentlichter Werte
+  function validation() {
+    var rows = [];
+    function vRow(tab, label, key, val, study) {
+      var x = meansV(); x[key] = val; rows.push({ stage: "Vorauswahl", tab: tab, label: label, study: study, model: vorauswahl(x).p });
+    }
+    function iRow(tab, label, patch, study) {
+      var x = refI(); Object.keys(patch).forEach(function (k) { x[k] = patch[k]; });
+      rows.push({ stage: "Interview", tab: tab, label: label, study: study, model: interview(x).p });
+    }
+    [[1.0, 0.84], [1.5, 0.70], [2.0, 0.55], [2.5, 0.35], [3.0, 0.16]].forEach(function (a) { vRow("Tab. 12", "Abiturnote " + a[0].toFixed(1).replace(".", ","), "abi", a[0], a[1]); });
+    [[1.0, 0.89], [1.5, 0.76], [2.0, 0.57], [2.5, 0.34], [3.0, 0.17]].forEach(function (a) { vRow("Tab. 13", "Studiennote " + a[0].toFixed(1).replace(".", ","), "stud", a[0], a[1]); });
+    vRow("Tab. 15", "TOEFL eingereicht", "toefl", 1, 0.78); vRow("Tab. 15", "Kein TOEFL", "toefl", 0, 0.42);
+    vRow("Tab. 19", "Austauschprogramm ja", "austausch", 1, 0.78); vRow("Tab. 19", "Austauschprogramm nein", "austausch", 0, 0.58);
+    vRow("Tab. 20", "Staatliche Gasthochschule", "privat", 0, 0.71); vRow("Tab. 20", "Private Gasthochschule", "privat", 1, 0.47);
+    vRow("Tab. 22", "Gutachten von Professor", "prof", 1, 0.74); vRow("Tab. 22", "Gutachten von Mitarbeiter", "prof", 0, 0.37);
+    vRow("Tab. 23", "In Deutschland geboren", "geboren", 1, 0.68); vRow("Tab. 23", "Im Ausland geboren", "geboren", 0, 0.22);
+    vRow("Tab. 26", "Eltern Akademiker", "eltern", 1, 0.46); vRow("Tab. 26", "Eltern nicht angegeben", "eltern", 0, 0.69);
+    [[1.0, 0.86], [1.5, 0.72], [2.0, 0.51], [2.5, 0.30], [3.0, 0.14]].forEach(function (a) { iRow("Tab. 38", "Studiennote " + a[0].toFixed(1).replace(".", ","), { stud: a[0] }, a[1]); });
+    iRow("Tab. 39", "Studienstiftler", { sdv: 1 }, 0.91); iRow("Tab. 39", "Kein Studienstiftler", { sdv: 0 }, 0.61);
+    iRow("Tab. 45", "Andere Bewerbungen ja", { andere: 1 }, 0.73); iRow("Tab. 45", "Andere Bewerbungen nein", { andere: 0 }, 0.56);
+    iRow("Tab. 46", "Kontakt Gasthochschule ja", { kontakt: 1 }, 0.72); iRow("Tab. 46", "Kontakt Gasthochschule nein", { kontakt: 0 }, 0.57);
+    iRow("Tab. 47", "Engagement hoch", { hoch: 1, niedrig: 0 }, 0.91); iRow("Tab. 47", "Engagement mittel", { mittel: 1, niedrig: 0 }, 0.75);
+    iRow("Tab. 47", "Engagement niedrig", {}, 0.74); iRow("Tab. 47", "Kein Engagement", { niedrig: 0 }, 0.62);
+    [[80, 0.50], [85, 0.65], [90, 0.77], [95, 0.86], [100, 0.92]].forEach(function (a) { iRow("Tab. 51", "Vorauswahlscore " + a[0], { score: a[0] }, a[1]); });
+    return rows;
+  }
+  return { evaluateVec: evaluateVec, V: V, I: I, SLOT_MEANS: SLOT_MEANS, validation: validation, score: score, meansV: meansV, refI: refI, vorauswahl: vorauswahl, interview: interview };
+})();
+
+
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var de = function (x, d) { return x.toLocaleString("de-DE", { minimumFractionDigits: d, maximumFractionDigits: d }); };
+  var pct0 = function (p) { return Math.round(p * 100) + " %"; };
+  var BV = {}, BI = {};
+  DAAD.V.forEach(function (r) { BV[r[0]] = { b: r[2], s: r[4] }; });
+  DAAD.I.forEach(function (r) { BI[r[0]] = { b: r[2], s: r[4] }; });
+  var M = DAAD.meansV();
+  var UNIT = { abi: "je Note schlechter", stud: "je Note schlechter", sprache: "je Punkt", fee: "je 1.000 $", urteil: "je Punkt",
+    alter: "je Jahr", gutAlter: "je Jahr", kSize: "je Person", kFrauen: "nur Frauen statt nur Männer", kAlter: "je Jahr", score: "je Punkt" };
+  var G = [
+    ["Schule und Studium", [
+      { id: "abi", l: "Abiturnote", t: "num", m: 1.802, d: 2, min: 1, max: 4, step: 0.1, v: "abi", i: "abi" },
+      { id: "stud", l: "Studiennote", t: "num", m: 1.938, d: 2, min: 1, max: 4, step: 0.1, v: "stud", i: "stud" },
+      { id: "hs", l: "Heimathochschule", t: "sel", opts: [["uni", "Universität", {}], ["th", "Technische Hochschule", { th: 1 }], ["fh", "Fachhochschule", { fh: 1 }]], keys: ["th", "fh"] },
+      { id: "abschluss", l: "Angestrebter Abschluss", t: "sel", opts: [["bachelor", "Bachelor", {}], ["diplom", "Diplom", { diplom: 1 }], ["examen", "Staatsexamen", { examen: 1 }], ["magister", "Magister", { magister: 1 }]], keys: ["diplom", "examen", "magister"] },
+      { id: "anfaenger", l: "Studienanfänger (1.–3. Sem.)", t: "tri", m: 0.25, est: true, v: "anfaenger" }
+    ]],
+    ["Sprachkenntnisse", [
+      { id: "sprache", l: "Bescheinigte Sprachkenntnisse (0–100)", t: "num", m: 88.613, d: 1, min: 0, max: 100, step: 1, v: "sprache", i: "sprache" },
+      { id: "toefl", l: "TOEFL eingereicht", t: "tri", m: 0.562, v: "toefl" }
+    ]],
+    ["Ausbildung und Nebentätigkeit", [
+      { id: "ausb", l: "Berufsausbildung", t: "tri", m: 0.05, est: true, v: "ausb" },
+      { id: "zbw", l: "Zweiter Bildungsweg", t: "tri", m: 0.01, est: true, v: "zbw" },
+      { id: "job", l: "Nebenjob", t: "sel", opts: [["none", "Kein Nebenjob", {}], ["uni", "Nur Hochschule", { jobUni: 1 }], ["both", "Hochschule und extern", { jobBoth: 1 }], ["ext", "Nur extern", { jobExt: 1 }]], keys: ["jobUni", "jobBoth", "jobExt"] }
+    ]],
+    ["Anderweitige Förderung", [
+      { id: "bafoeg", l: "BAföG-Empfänger", t: "tri", m: 0.226, v: "bafoeg" },
+      { id: "sdv", l: "Stipendiat Studienstiftung", t: "tri", m: 0.060, v: "sdv", i: "sdv" },
+      { id: "andere", l: "Andere Stipendienbewerbungen", t: "tri", m: 0.421, v: "andere", i: "andere" }
+    ]],
+    ["Studienvorhaben", [
+      { id: "kontakt", l: "Kontakte zur Gastinstitution", t: "tri", m: 0.452, v: "kontakt", i: "kontakt" },
+      { id: "fee", l: "Studiengebühren (Tsd. US-$)", t: "num", m: 14.221, d: 1, min: 0, max: 150, step: 1, v: "fee", i: "fee" },
+      { id: "austausch", l: "Austauschprogramm", t: "tri", m: 0.278, v: "austausch" },
+      { id: "privat", l: "Private Gastinstitution", t: "tri", m: 0.276, v: "privat", i: "privat" },
+      { id: "top10", l: "Top 10 im THE-Fachranking", t: "tri", m: 0.181, v: "top10", i: "top10" },
+      { id: "region", l: "Region (Nordamerika)", t: "sel", opts: [["west", "US-West", {}], ["canada", "Kanada", { canada: 1 }], ["midwest", "US-Midwest", { midwest: 1 }], ["northeast", "US-Northeast", { northeast: 1 }], ["south", "US-South", { south: 1 }]], keys: ["canada", "midwest", "northeast", "south"] }
+    ]],
+    ["Gesellschaftliches Engagement", [
+      { id: "engN", l: "Anzahl Arten", t: "sel", opts: [["none", "Keine", {}], ["one", "Genau eine", { eng1: 1 }], ["multi", "Mehrere", { engM: 1 }]], keys: ["eng1", "engM"] },
+      { id: "e_pol", l: "Politisch", t: "tri", m: 0.177, v: "e_pol" },
+      { id: "e_jug", l: "Jugend, Sport, Freizeit", t: "tri", m: 0.482, v: "e_jug" },
+      { id: "e_kun", l: "Kunst und Kultur", t: "tri", m: 0.228, v: "e_kun" },
+      { id: "e_soz", l: "Sozial", t: "tri", m: 0.248, v: "e_soz" },
+      { id: "e_kir", l: "Kirchlich", t: "tri", m: 0.143, v: "e_kir" },
+      { id: "e_fac", l: "Fachschaft, Fakultät", t: "tri", m: 0.212, v: "e_fac" },
+      { id: "e_sch", l: "Schülervertretung", t: "tri", m: 0.145, v: "e_sch" },
+      { id: "e_aus", l: "Austauschorganisation", t: "tri", m: 0.081, v: "e_aus" },
+      { id: "staerke", l: "Stärke des Engagements", t: "sel", iOnly: true, opts: [["keins", "Kein", {}], ["niedrig", "Niedrig", { niedrig: 1 }], ["mittel", "Mittel", { mittel: 1 }], ["hoch", "Hoch", { hoch: 1 }]], keys: ["niedrig", "mittel", "hoch"], means: { niedrig: 0.504, mittel: 0.274, hoch: 0.065 } }
+    ]],
+    ["Empfehlungsschreiben", [
+      { id: "urteil", l: "Gesamturteil Gutachten (0–10)", t: "num", m: 9.252, d: 2, min: 0, max: 10, step: 0.1, v: "urteil", i: "urteil" },
+      { id: "prof", l: "Empfehlender ist Professor/in", t: "tri", m: 0.681, v: "prof", i: "prof" },
+      { id: "kennt", l: "Empfehlender kennt Bewerber gut", t: "tri", m: 0.834, v: "kennt", i: "kennt" }
+    ]],
+    ["Bewerber", [
+      { id: "alter", l: "Alter (Jahre)", t: "num", m: 21.87, d: 1, min: 16, max: 45, step: 0.5, v: "alter", i: "alter" },
+      { id: "weibl", l: "Weiblich", t: "tri", m: 0.486, v: "weibl", i: "weibl" },
+      { id: "geboren", l: "In Deutschland geboren", t: "tri", m: 0.919, v: "geboren", i: "geboren" },
+      { id: "eltern", l: "Eltern als Akademiker genannt", t: "tri", m: 0.236, v: "eltern", i: "eltern" },
+      { id: "brille", l: "Brillenträger", t: "tri", m: 0.178, v: "brille" }
+    ]],
+    ["Gutachter und Kommission", [
+      { id: "gutW", l: "Vorauswahl-Gutachterin (weiblich)", t: "tri", m: 0.20, est: true, v: "gutW" },
+      { id: "gutAlter", l: "Alter Vorauswahl-Gutachter", t: "num", m: 53.55, d: 1, min: 30, max: 70, step: 1, v: "gutAlter" },
+      { id: "slot", l: "Uhrzeit des Interviews", t: "sel", iOnly: true, opts: [["t10", "10–11 Uhr", {}], ["t9", "9–10 Uhr", { t9: 1 }], ["t11", "11–12 Uhr", { t11: 1 }], ["t12", "12–13:30 Uhr", { t12: 1 }], ["t14", "14–15 Uhr", { t14: 1 }], ["t15", "15–16 Uhr", { t15: 1 }], ["t16", "16–17 Uhr", { t16: 1 }], ["t17", "17–19 Uhr", { t17: 1 }]], keys: ["t9", "t11", "t12", "t14", "t15", "t16", "t17"], means: DAAD.SLOT_MEANS },
+      { id: "kSize", l: "Kommissionsgröße", t: "num", m: 4.35, d: 2, min: 3, max: 7, step: 1, i: "kSize" },
+      { id: "kFrauen", l: "Frauenanteil Kommission (0–1)", t: "num", m: 0.26, d: 2, min: 0, max: 1, step: 0.05, i: "kFrauen" },
+      { id: "kMaenner", l: "Mehrheit Männer in Kommission", t: "tri", m: 0.815, i: "kMaenner" },
+      { id: "kAlter", l: "Durchschnittsalter Kommission", t: "num", m: 52.42, d: 1, min: 35, max: 70, step: 1, i: "kAlter" }
+    ]]
+
+  ];
+
+
+  var LABEL_FIX = { gutW: "Vorauswahl durch eine Gutachterin", kMaenner: "Mehrheit der Kommission männlich", score: "Eigene Punktzahl aus der Vorauswahl" };
+
+  function rnd(f) { return Number(f.m.toFixed(f.d)); }
+  // Voreinstellung: durchschnittliches Profil, das die Quoten der Studie (54 % / 29 %) annähernd trifft
+  var DEF = { abi: 1.9, stud: 2.0, hs: "uni", abschluss: "diplom", anfaenger: "0", sprache: 88.6, toefl: "0", ausb: "0", zbw: "0",
+    job: "ext", bafoeg: "0", sdv: "0", andere: "1", kontakt: "1", fee: 14.76, austausch: "0", privat: "0", top10: "0", region: "west",
+    engN: "one", e_pol: "0", e_jug: "1", e_kun: "0", e_soz: "0", e_kir: "0", e_fac: "0", e_sch: "0", e_aus: "0", staerke: "mittel",
+    urteil: 9.1, prof: "1", kennt: "1", alter: 21.9, weibl: "0", geboren: "1", eltern: "0", brille: "0",
+    gutW: "avg", gutAlter: 53.56, slot: "avg", kSize: 4.35, kFrauen: 0.26, kMaenner: "avg", kAlter: 52.42 };
+  var UNKNOWN = { gutW: 1, kMaenner: 1, slot: 1 };
+  // Nicht abgefragt (veraltet, nur USA oder dem Bewerber unbekannt): fest auf dem Durchschnitt der Studie
+  var HIDDEN = { abschluss: 1, fee: 1, region: 1, gutW: 1, gutAlter: 1, slot: 1, kSize: 1, kFrauen: 1, kMaenner: 1, kAlter: 1 };
+  function fmtF(b) { var f = Math.exp(b); return "×" + de(f, f >= 10 ? 0 : (f >= 1.995 ? 1 : 2)); }
+  function pill(cls, name, b, s, unit) {
+    if (b === undefined) return "";
+    return '<span class="pill ' + cls + '">' + name + " <b>" + fmtF(b) + "</b>" + (unit ? " " + unit : "") + "</span>";
+  }
+  function fieldHtml(f) {
+    var lbl = LABEL_FIX[f.id] || f.l, id = "f_" + f.id, input = "", meta = "";
+    if (f.t === "num") {
+      input = '<input type="number" id="' + id + '" min="' + f.min + '" max="' + f.max + '" step="' + f.step + '" value="' + DEF[f.id] + '">';
+      var u = UNIT[f.id] || "";
+      meta = '<span class="pill avg">Ø ' + de(f.m, f.d) + "</span>" + pill("v", "Vorauswahl", f.v ? BV[f.v].b : undefined, f.v ? BV[f.v].s : "", u) + pill("i", "Interview", f.i ? BI[f.i].b : undefined, f.i ? BI[f.i].s : "", u);
+    } else if (f.t === "tri") {
+      input = '<span class="seg" role="radiogroup" aria-label="' + lbl + '">' + (UNKNOWN[f.id] ? [["avg", "Unbekannt"], ["1", "Ja"], ["0", "Nein"]] : [["1", "Ja"], ["0", "Nein"]]).map(function (o) {
+        return '<label><input type="radio" name="' + id + '" value="' + o[0] + '"' + (o[0] === DEF[f.id] ? " checked" : "") + "><span>" + o[1] + "</span></label>";
+      }).join("") + "</span>";
+      meta = '<span class="pill avg">Ø ' + de(f.m * 100, 0) + " % Ja</span>" + pill("v", "Vorauswahl", f.v ? BV[f.v].b : undefined, f.v ? BV[f.v].s : "", "bei Ja") + pill("i", "Interview", f.i ? BI[f.i].b : undefined, f.i ? BI[f.i].s : "", "bei Ja") + (f.est ? '<span class="est">Ø geschätzt</span>' : "");
+    } else if (f.t === "sel") {
+      var tab = f.iOnly ? BI : BV, ref = f.opts[0][1];
+      input = '<select id="' + id + '">' + (UNKNOWN[f.id] ? '<option value="avg">Unbekannt</option>' : "") + f.opts.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === DEF[f.id] ? " selected" : "") + ">" + o[1] + "</option>"; }).join("") + "</select>";
+      meta = f.opts.slice(1).map(function (o) { var k = Object.keys(o[2])[0]; return pill(f.iOnly ? "i" : "v", o[1], tab[k].b, tab[k].s, ""); }).join("") + '<span class="est">gegenüber ' + ref + (f.iOnly ? ", im Interview" : ", in der Vorauswahl") + "</span>";
+    } else if (f.t === "score") {
+      input = '<input type="number" id="' + id + '" min="0" max="100" step="0.5" placeholder="automatisch">';
+      meta = '<span class="pill avg">Ø 75,4</span>' + pill("i", "Interview", BI.score.b, BI.score.s, "je Punkt") + '<span class="est">leer lassen: wird aus deinen Angaben geschätzt</span>';
+    }
+    return '<div class="field"><' + (f.t === "tri" ? 'span class="lbl"' : 'label for="' + id + '"') + ">" + lbl + "</" + (f.t === "tri" ? "span" : "label") + ">" + input + '<div class="meta">' + meta + "</div></div>";
+  }
+  $("inputs").innerHTML = G.map(function (g) {
+    var vis = g[1].filter(function (f) { return !HIDDEN[f.id]; });
+    if (!vis.length) return "";
+    return '<section class="group"><h2>' + g[0] + "</h2>" + vis.map(fieldHtml).join("") + "</section>";
+  }).join("");
+
+  var FIELDS = []; G.forEach(function (g) { g[1].forEach(function (f) { FIELDS.push(f); }); });
+  function triVal(f) { var c = document.querySelector('input[name="f_' + f.id + '"]:checked'); return c ? c.value : "avg"; }
+
+  function readRaw() {
+    var raw = {};
+    FIELDS.forEach(function (f) {
+      if (HIDDEN[f.id]) return;
+      raw[f.id] = f.t === "tri" ? triVal(f) : $("f_" + f.id).value;
+    });
+    return raw;
+  }
+  function build(raw) {
+    var v = {}, i = {};
+    FIELDS.forEach(function (f) {
+      if (HIDDEN[f.id]) {
+        if (f.t === "num" || f.t === "tri") { if (f.v) v[f.v] = f.m; if (f.i) i[f.i] = f.m; }
+        else if (f.t === "sel") { var tg = f.iOnly ? i : v; f.keys.forEach(function (k) { tg[k] = f.means ? f.means[k] : M[k]; }); }
+        return;
+      }
+      var rv = raw[f.id];
+      if (f.t === "tri") { var y = rv === "avg" ? f.m : parseFloat(rv); if (f.v) v[f.v] = y; if (f.i) i[f.i] = y; }
+      else if (f.t === "num") { var x = parseFloat(rv); if (isNaN(x)) x = DEF[f.id]; x = Math.min(f.max, Math.max(f.min, x)); if (f.v) v[f.v] = x; if (f.i) i[f.i] = x; }
+      else if (f.t === "sel") {
+        var target = f.iOnly ? i : v;
+        f.keys.forEach(function (k) {
+          if (rv === "avg") target[k] = f.means ? f.means[k] : M[k];
+          else { var o = f.opts.filter(function (o) { return o[0] === rv; })[0]; target[k] = o[2][k] || 0; }
+        });
+      }
+    });
+    return { v: v, i: i, s: null };
+  }
+  function calc(raw) { var x = build(raw); return DAAD.evaluateVec(x.v, x.i, null); }
+  function markChanged(raw) {
+    FIELDS.forEach(function (f) {
+      if (HIDDEN[f.id]) return;
+      if (f.t === "tri") { document.querySelector('input[name="f_' + f.id + '"]').closest(".seg").classList.toggle("changed", raw[f.id] !== DEF[f.id]); return; }
+      var el = $("f_" + f.id), ch = f.t === "num" ? Math.abs(parseFloat(raw[f.id]) - DEF[f.id]) > 1e-9 : raw[f.id] !== DEF[f.id];
+      el.classList.toggle("changed", ch);
+    });
+  }
+  function vectors() { var raw = readRaw(); markChanged(raw); return build(raw); }
+
+
+  var view = "v";
+  var NICE = { eng1: "Genau eine Engagement-Art", engM: "Mehrere Engagement-Arten" };
+  function bars(parts) {
+    var shown = parts.filter(function (p) { return Math.abs(p.c) >= 0.02; }).sort(function (a, b) { return Math.abs(b.c) - Math.abs(a.c); }).slice(0, 12);
+    if (!shown.length) return '<div class="sub">Noch keine Angabe weicht vom Durchschnitt ab.</div>';
+    var mx = Math.max(1, Math.max.apply(null, shown.map(function (p) { return Math.abs(p.c); })));
+    return shown.map(function (p) {
+      var w = Math.abs(p.c) / mx * 50, left = p.c >= 0 ? 50 : 50 - w, col = p.c >= 0 ? "var(--pos)" : "var(--neg)";
+      return '<div class="bar"><span class="name" title="' + p.name + '">' + (NICE[p.key] || p.name) + '</span><span class="track"><span class="seg2" style="left:' + left + "%;width:" + w + "%;background:" + col + '"></span></span></div>';
+    }).join("");
+  }
+  function render() {
+    var x = vectors(), r = DAAD.evaluateVec(x.v, x.i, x.s);
+    $("pV").textContent = pct0(r.pv.p); $("gV").style.width = (r.pv.p * 100).toFixed(1) + "%";
+    $("pT").textContent = pct0(r.total); $("gT").style.width = (r.total * 100).toFixed(1) + "%"; 
+    $("barsCap").textContent = view === "v" ? "Was deine Einladungschance gegenüber dem Durchschnitt aller Bewerber hebt (grün) oder senkt (rot)." : "Was deine Chance im Interview gegenüber einem typischen eingeladenen Bewerber hebt (grün) oder senkt (rot).";
+    $("bars").innerHTML = bars(view === "v" ? r.pv.parts : r.pi.parts);
+  }
+  function setView(w) { view = w; $("tabV").setAttribute("aria-pressed", String(w === "v")); $("tabI").setAttribute("aria-pressed", String(w === "i")); render(); }
+  $("tabV").addEventListener("click", function () { setView("v"); });
+  $("tabI").addEventListener("click", function () { setView("i"); });
+  document.querySelectorAll("#inputs input, #inputs select").forEach(function (el) { el.addEventListener("input", render); el.addEventListener("change", render); });
+
+
+  function fieldBy(id) { return FIELDS.filter(function (f) { return f.id === id; })[0]; }
+  function optLabel(id, val) { var f = fieldBy(id), o = f.opts.filter(function (o) { return o[0] === val; })[0]; return o ? o[1] : "–"; }
+  function jn(v) { return v === "1" ? "ja" : "nein"; }
+  function num(v, d) { var x = parseFloat(v); return isNaN(x) ? "–" : de(x, d); }
+  function shareText() {
+    var r = readRaw(), res = calc(r);
+    var types = ["e_pol", "e_jug", "e_kun", "e_soz", "e_kir", "e_fac", "e_sch", "e_aus"].filter(function (k) { return r[k] === "1"; }).map(function (k) { return fieldBy(k).l; });
+    return [
+      "DAAD Masterstipendium – mein Profil im Chancenrechner",
+      "",
+      "Einladung zum Interview: " + pct0(res.pv.p) + " (Durchschnitt 54 %)",
+      "Stipendium insgesamt:    " + pct0(res.total) + " (Durchschnitt 29 %)",
+      "",
+      "Noten: Abitur " + num(r.abi, 1) + " · Studium " + num(r.stud, 1),
+      "Sprachtest (TOEFL): " + jn(r.toefl),
+      "Gutachten: Professor/in " + jn(r.prof) + " · kennt mich gut " + jn(r.kennt),
+      "Engagement: " + ({ none: "keins", one: "in einem Bereich", multi: "in mehreren Bereichen" })[r.engN] + " · Stärke " + optLabel("staerke", r.staerke).toLowerCase(),
+      "Kontakt zur Gasthochschule: " + jn(r.kontakt) + " · weitere Stipendienbewerbungen: " + jn(r.andere),
+      "",
+      "Geschätzt mit den Modellen der DAAD-Studie „Determinanten der Auswahl“ (Kurze 2013). Grobe Orientierung, keine Prognose."
+    ].join("\n");
+  }
+
+  // ---- Dialoge ----
+  var lastFocus = null;
+  function openModal(id) { lastFocus = document.activeElement; $(id).hidden = false; var c = $(id).querySelector("[data-close]"); if (c) c.focus(); }
+  function closeModal(m) { m.hidden = true; if (lastFocus) lastFocus.focus(); }
+  document.querySelectorAll(".modal").forEach(function (m) {
+    m.addEventListener("click", function (e) { if (e.target === m || e.target.hasAttribute("data-close")) closeModal(m); });
+  });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") document.querySelectorAll(".modal:not([hidden])").forEach(closeModal); });
+  $("openLever").addEventListener("click", function () { openModal("mLever"); });
+  $("openShare").addEventListener("click", function () { $("shareText").value = shareText(); $("copyMsg").textContent = ""; openModal("mShare"); });
+  $("copyShare").addEventListener("click", function () {
+    var ta = $("shareText");
+    function fallback() { ta.focus(); ta.select(); $("copyMsg").textContent = "Text ist markiert: mit Strg+C bzw. Cmd+C kopieren."; }
+    try {
+      navigator.clipboard.writeText(ta.value).then(function () { $("copyMsg").textContent = "Kopiert."; }, fallback);
+    } catch (err) { fallback(); }
+  });
+
+  var x0 = vectors(), r0 = DAAD.evaluateVec(x0.v, x0.i, null);
+  $("meanV").textContent = pct0(r0.pv.p); $("meanT").textContent = pct0(r0.total);
+  render();
+})();
+</script>
+</body>
+</html>
