@@ -353,7 +353,7 @@ html { scroll-behavior: smooth; }
       <a href="#methode">Methode und Grenzen</a>
     </nav>
     <h1>DAAD Masterstipendium - Chancenrechner</h1>
-    <p>Der Rechner schätzt, wie wahrscheinlich du beim DAAD erst zum Interview eingeladen wirst und dann das Stipendium bekommst. Grundlage ist die DAAD-Studie „Determinanten der Auswahl“ (Linda Kurze, 2013). Sie hat 504 echte Bewerbungen um DAAD-Jahresstipendien für die USA und Kanada aus 2008–2010 ausgewertet und mit Regressionsmodellen gemessen, welche Merkmale die Auswahl beeinflussen. Der Rechner nutzt genau diese Modelle. Voreingestellt ist ein durchschnittlicher Bewerber; ändere, was auf dich zutrifft.</p>
+    <p>Der Rechner schätzt, wie wahrscheinlich du beim DAAD erst zum Interview eingeladen wirst und dann das Stipendium bekommst. Grundlage ist die DAAD-Studie „Determinanten des Erfolges von Stipendienbewerbungen“ (Linda Kurze, 2013). Sie hat 504 echte Bewerbungen um DAAD-Jahresstipendien für die USA und Kanada aus 2008–2010 ausgewertet und mit Regressionsmodellen gemessen, welche Merkmale die Auswahl beeinflussen. Der Rechner nutzt genau diese Modelle. Voreingestellt ist ein durchschnittlicher Bewerber; ändere, was auf dich zutrifft.</p>
   </header>
 
   <div class="results" aria-live="polite">
@@ -447,7 +447,7 @@ html { scroll-behavior: smooth; }
   </div>
 </div>
 <script>
-// DAAD-Studie "Determinanten der Auswahl" (Kurze 2013): Modelle als reine Funktionen.
+// DAAD-Studie "Determinanten des Erfolges von Stipendienbewerbungen" (Kurze 2013): Modelle als reine Funktionen.
 var DAAD = (function () {
   "use strict";
   // Vorauswahl: logistische Regression, Schätzung 2-III (Tabelle 11), Mittelwerte aller Bewerber (Tab. 34, Kap. 3, Tab. 24).
@@ -886,7 +886,7 @@ var DAAD = (function () {
       "Förderung: Studienstiftung " + jn(r.sdv) + " · anderes Begabtenförderungswerk " + jn(r.bf),
       "Kontakt zur Gasthochschule: " + jn(r.kontakt) + " · weitere Stipendienbewerbungen: " + jn(r.andere),
       "",
-      "Geschätzt mit den Modellen der DAAD-Studie „Determinanten der Auswahl“ (Kurze 2013). Grobe Orientierung, keine Prognose."
+      "Geschätzt mit den Modellen der DAAD-Studie „Determinanten des Erfolges von Stipendienbewerbungen“ (Kurze 2013). Grobe Orientierung, keine Prognose."
     ].join("\n");
   }
 
