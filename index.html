@@ -281,11 +281,77 @@ input[type="number"]:focus, select:focus { box-shadow: 3px 3px 0 var(--accent); 
 .gauge .band { position: absolute; top: -4px; bottom: -4px; background: color-mix(in srgb, var(--mark) 55%, transparent); border-left: 2px solid var(--ink); border-right: 2px solid var(--ink); border-radius: 2px; pointer-events: none; }
 .gauge .mark { z-index: 2; }
 .legend .bandsample { display: inline-block; width: 64px; height: 12px; border: 2px solid var(--line); border-radius: 3px; background: linear-gradient(90deg, transparent 25%, color-mix(in srgb, var(--mark) 55%, transparent) 25% 75%, transparent 75%); }
+
+/* Navigation oben: springt zu den Bereichen, unter der fixierten Ergebnisleiste */
+html { scroll-behavior: smooth; }
+#inputs, #lesehilfe, #methode { scroll-margin-top: calc(var(--stick, 0px) + 14px); }
+.topbar { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+.topbar a { font-size: 14px; color: var(--muted); text-decoration: none; padding: 6px 11px; border-radius: 8px; }
+.topbar a:hover { color: var(--ink); background: var(--hair); }
+
+/* Ja/Nein/Offen als Segmente */
+.seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; border: 1.5px solid var(--hair); border-radius: 12px; background: var(--surface); overflow: visible; }
+.seg label { position: relative; padding: 0; border: 0 !important; background: none !important; }
+.seg label:has(input:focus-visible) { outline: none; }
+.seg input { position: absolute; inset: 0; opacity: 0; margin: 0; pointer-events: auto; cursor: pointer; }
+.seg span { display: block; padding: 6px 14px; border-radius: 9px; font-size: 14.5px; font-weight: 600; color: var(--muted); white-space: nowrap; transition: background .15s, color .15s; }
+.seg label:hover span { color: var(--ink); }
+.seg input:checked + span { background: var(--ink); color: var(--surface); }
+.seg input[value="avg"]:checked + span { background: var(--hair); color: var(--muted); font-weight: 500; }
+.seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 1px; }
+.seg.changed { border-color: var(--hair) !important; }
+
+/* Engagement: Bereiche direkt anklicken */
+.field.stack { grid-template-columns: minmax(0, 1fr); }
+.checks { display: flex; flex-wrap: wrap; gap: 6px; border-radius: 12px; }
+.checks label { position: relative; }
+.checks input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.checks span { display: inline-flex; align-items: baseline; gap: 6px; padding: 6px 13px; border: 1.5px solid var(--hair); border-radius: 99px; background: var(--surface); font-size: 14.5px; color: var(--muted); transition: background .15s, color .15s, border-color .15s; }
+.checks span::before { content: "+"; opacity: .6; }
+.checks label:hover span { color: var(--ink); border-color: var(--muted); }
+.checks input:checked + span { background: var(--ink); border-color: var(--ink); color: var(--surface); font-weight: 600; }
+.checks input:checked + span::before { content: "✓"; opacity: 1; }
+.checks small { font-family: var(--font-mono); font-size: 11px; font-weight: 500; opacity: .75; }
+.checks input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 1px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .seg span, .checks span { transition: none; } }
+
+/* Handy */
+.drv .bars { grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); }
+@media (max-width: 640px) {
+  .wrap { padding: 0 14px; }
+  header { padding: 18px 0 10px; }
+  .topbar { justify-content: flex-start; margin-left: -8px; }
+  .topbar a { padding: 5px 8px; font-size: 13.5px; }
+  .res { grid-template-columns: 1fr 1fr !important; gap: 2px; padding: 3px; }
+  .res .stage:first-child { border-right: 2px dashed var(--hair); border-bottom: 0; border-radius: 10px 0 0 10px; }
+  .stage { grid-template-columns: minmax(0, 1fr); padding: 6px 10px 4px; }
+  .stage .k { grid-row: auto; font-size: 13.5px; line-height: 1.2; }
+  .stage .k small, .stage .range { display: none; }
+  .stage .big { grid-column: 1; grid-row: auto; font-size: 38px; }
+  .stage .gauge { margin: 6px 0 8px; }
+  .drivers { padding: 4px 10px; }
+  .drv { max-height: 38vh; }
+  .bar { grid-template-columns: 112px minmax(0, 1fr); }
+  section.group { padding: 16px 14px 8px; }
+  section.group h2 { font-size: 20px; }
+  .field { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .field > .seg, .field > select, .field > input { justify-self: start; }
+  select { max-width: 100%; }
+  .actions .act { flex: 1 1 auto; }
+  .legendrow .legend { grid-template-columns: minmax(0, 1fr); }
+  .legend div { grid-template-columns: 112px minmax(0, 1fr); }
+  .mbox { padding: 16px; }
+}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
+    <nav class="topbar" aria-label="Seitenbereiche">
+      <a href="#inputs">Deine Angaben</a>
+      <a href="#lesehilfe">So liest du die Angaben</a>
+      <a href="#methode">Methode und Grenzen</a>
+    </nav>
     <h1>DAAD Masterstipendium - Chancenrechner</h1>
     <p>Der Rechner schätzt, wie wahrscheinlich du beim DAAD erst zum Interview eingeladen wirst und dann das Stipendium bekommst. Grundlage ist die DAAD-Studie „Determinanten der Auswahl“ (Linda Kurze, 2013). Sie hat 504 echte Bewerbungen um DAAD-Jahresstipendien für die USA und Kanada aus 2008–2010 ausgewertet und mit Regressionsmodellen gemessen, welche Merkmale die Auswahl beeinflussen. Der Rechner nutzt genau diese Modelle. Voreingestellt ist ein durchschnittlicher Bewerber; ändere, was auf dich zutrifft.</p>
   </header>
@@ -315,7 +381,7 @@ input[type="number"]:focus, select:focus { box-shadow: 3px 3px 0 var(--accent); 
   <main>
     <div class="inputs" id="inputs"></div>
   </main>
-  <div class="legendrow">
+  <div class="legendrow" id="lesehilfe">
     <div class="card">
         <h3>So liest du die Angaben</h3>
         <div class="legend">
@@ -324,13 +390,13 @@ input[type="number"]:focus, select:focus { box-shadow: 3px 3px 0 var(--accent); 
           <div><span class="pill v">Vorauswahl <b>×2,0</b></span> verdoppelt die Chance auf eine Einladung</div>
           <div><span class="pill i">Interview <b>×0,5</b></span> halbiert die Chance im Interview</div>
         </div>
-        <div class="sub">„Unbekannt“ (bei Gutachter, Kommission und Uhrzeit) rechnet mit dem Durchschnitt der Studie.</div>
+        <div class="sub">„Offen“ rechnet mit dem Durchschnitt der Studie.</div>
       </div>
   </div>
 
 
   <p class="note"><b>Hinweis:</b> Das Ergebnis ist nur eine grobe Prognose, keine Zusage. Die Daten sind über 15 Jahre alt und nicht repräsentativ für heutige Bewerber. Nicht alle Faktoren sind statistisch gesichert. Am Ende entscheidet eine Kommission im Einzelfall.</p>
-  <section class="more">
+  <section class="more" id="methode">
     <h2>Methode und Grenzen</h2>
     <ul>
       <li><b>Modelle:</b> Die Einladung schätzt die logistische Regression 2-III der Studie (Tabelle 11), das Interview die Regression 3-V (Tabelle 37). Die Punkte aus der Vorauswahl, die ins Interview eingehen, kommen aus der linearen Regression 2-III (Anhang II). Stipendium insgesamt = Einladung × Interview.</li>
@@ -340,6 +406,9 @@ input[type="number"]:focus, select:focus { box-shadow: 3px 3px 0 var(--accent); 
       <li><b>Quote:</b> „Stipendium insgesamt“ ist auf die aktuelle Quote des Masterstipendiums für Westeuropa eingestellt: 165 von 1.004 Bewerbungen in der Runde 2025/26 (16 %, aus einem DAAD-Bescheid, im studis-online-Forum zitiert). Ein durchschnittlicher Bewerber landet bei <span id="meanT"></span>. Die Einladungschance bleibt auf dem Stand der Studie (Durchschnittsbewerber <span id="meanV"></span>), weil es für Westeuropa keine aktuelle Einladungsquote gibt.</li>
       <li><b>Unsicherheit:</b> Der gelbe Bereich auf den Balken kombiniert vier Quellen: die Streuung der Ankerwerte der Studie, die Abweichung zwischen den beiden Modellen, die Quote aus nur einer Runde und den Übertrag von 2008–2010 auf heute. Der Bereich ist eine grobe Schätzung, kein statistisches Konfidenzintervall.</li>
       <li><b>Begrenzte Eingaben:</b> Zahlen lassen sich nur im Bereich eingeben, in dem die Studie genügend Bewerber hatte (z. B. Noten 1,0–3,0). Ergebnisse unter 5 % oder über 95 % werden nicht genauer ausgewiesen.</li>
+      <li><b>„Offen“:</b> Eine offen gelassene Ja/Nein-Frage rechnet mit dem Anteil aller Bewerber der Studie. Beim Engagement leitet der Rechner aus den angeklickten Bereichen ab, ob du keine, genau eine oder mehrere Arten angibst.</li>
+      <li><b>Zusätzlicher Sprachtest:</b> Die Studie hat erfasst, ob ein TOEFL-Ergebnis vorlag, ob allein oder zusätzlich zum DAAD-Sprachzeugnis. Der Rechner überträgt diesen Effekt auf jeden standardisierten Test, den du zusätzlich einreichst.</li>
+      <li><b>Anderes Begabtenförderungswerk:</b> Die Studie schätzt den Effekt „irgendeine Begabtenförderung“ (Schätzungen 2-Ia und 1-Ia) und getrennt den der Studienstiftung (2-Ib und 1-Ib). Daraus ist der Effekt der übrigen Förderwerke zurückgerechnet: Der Effekt aller Geförderten ist als gewichtetes Mittel angesetzt, mit dem Anteil der Studienstiftler (30 von 74 Geförderten) als Gewicht. Das ergibt für die Einladung praktisch null, für das Gesamtmodell −0,41 (nicht signifikant) und für die Vorauswahlpunkte +2,3. Für das Gespräch fand die Studie keinen Einfluss. Die Zerlegung ist eine Näherung.</li>
       <li><b>Fest auf dem Durchschnitt:</b> Alter, angestrebter Abschluss, Studienanfänger, Studiengebühren, Region, Ranking der Gasthochschule, Brille sowie Gutachter, Kommission und Uhrzeit des Interviews. „Ø geschätzt“ markiert Durchschnitte, die die Studie nicht nennt.</li>
       <li><b>Grenzen:</b> Die Daten stammen aus Jahresstipendien für die USA und Kanada (2008–2010), nicht aus dem heutigen Masterstipendium. Die Faktoren zeigen Zusammenhänge, keine Ursachen. Das Ergebnis ist eine grobe Orientierung, keine Prognose.</li>
     </ul>
@@ -393,7 +462,7 @@ var DAAD = (function () {
     ["magister", "Abschluss Magister", 0.672, 0.184, ""],
     ["anfaenger", "Studienanfänger", -0.416, 0.25, "", "est"],
     ["sprache", "Sprachkenntnisse", 0.053, 88.613, "**"],
-    ["toefl", "TOEFL eingereicht", 1.574, 0.562, "***"],
+    ["toefl", "Zusätzlicher Sprachtest", 1.574, 0.562, "***"],
     ["ausb", "Berufsausbildung", -0.183, 0.05, "", "est"],
     ["zbw", "Zweiter Bildungsweg", 1.250, 0.01, "", "est"],
     ["jobUni", "Nebenjob nur Hochschule", -0.441, 0.157, ""],
@@ -401,6 +470,9 @@ var DAAD = (function () {
     ["jobExt", "Nebenjob nur extern", -0.311, 0.416, ""],
     ["bafoeg", "BAföG", -0.424, 0.226, ""],
     ["sdv", "Studienstiftung", 1.971, 0.060, ""],
+    // Anderes Begabtenförderungswerk: zerlegt aus 2-Ia (irgendeine Förderung 0,911) und 2-Ib (Studienstiftung 2,248),
+    // gewichtet mit dem Anteil der Studienstiftler an allen Geförderten (30 von 74, Kap. 3). Ø 44 von 504.
+    ["bf", "Anderes Begabtenförderungswerk", -0.001, 0.087, ""],
     ["andere", "Andere Stipendienbewerbungen", -0.317, 0.421, ""],
     ["kontakt", "Kontakt Gasthochschule", 0.525, 0.452, ""],
     ["fee", "Studiengebühren (Tsd. $)", 0.001, 14.221, "*"],
@@ -436,7 +508,7 @@ var DAAD = (function () {
   var S_CONST = 68.452;
   var S = { abi: -6.777, stud: -5.776, fh: 3.374, th: 0.939, diplom: -5.118, examen: -0.904, magister: -2.315,
     anfaenger: -5.091, sprache: 0.124, toefl: 4.348, ausb: -0.293, zbw: 1.601, jobUni: -0.045, jobBoth: 2.147,
-    jobExt: -0.781, bafoeg: -1.744, sdv: 3.233, andere: -0.487, kontakt: 3.025, fee: 0, austausch: 1.522,
+    jobExt: -0.781, bafoeg: -1.744, sdv: 3.233, bf: 2.286, andere: -0.487, kontakt: 3.025, fee: 0, austausch: 1.522,
     privat: -1.905, top10: 0.585, canada: -0.446, midwest: -0.576, northeast: 0.677, south: 0.447,
     e_pol: 0.536, e_jug: 1.078, e_kun: -0.518, e_soz: -0.847, e_kir: -1.522, e_fac: 0.905, e_sch: -1.817,
     e_aus: -1.597, eng1: 2.694, engM: 4.312, urteil: 3.659, prof: 2.795, kennt: 0.190, weibl: -0.544,
@@ -478,7 +550,7 @@ var DAAD = (function () {
   // Gesamtmodell: logistische Regression 1-III (Tabelle 10), zentriert auf die Mittelwerte aller Bewerber
   var B1 = { abi: [-0.805, "**"], stud: [-1.752, "***"], fh: [-0.757, ""], th: [-0.518, ""], diplom: [-0.389, ""], examen: [-1.095, ""],
     magister: [-0.199, ""], anfaenger: [-0.252, ""], sprache: [0.040, "*"], toefl: [0.922, "***"], ausb: [-0.064, ""], zbw: [1.754, ""],
-    jobUni: [0.236, ""], jobBoth: [0.358, ""], jobExt: [0.052, ""], bafoeg: [0.241, ""], sdv: [1.279, "**"], andere: [0.539, "*"],
+    jobUni: [0.236, ""], jobBoth: [0.358, ""], jobExt: [0.052, ""], bafoeg: [0.241, ""], sdv: [1.279, "**"], bf: [-0.407, ""], andere: [0.539, "*"],
     kontakt: [0.557, "*"], fee: [0, ""], austausch: [0.448, ""], privat: [0.291, ""], top10: [0.151, ""], canada: [0.274, ""],
     midwest: [0.760, ""], northeast: [-0.027, ""], south: [0.247, ""], e_pol: [-0.338, ""], e_jug: [0.121, ""], e_kun: [-0.110, ""],
     e_soz: [-0.229, ""], e_kir: [0.186, ""], e_fac: [0.333, ""], e_sch: [0.568, ""], e_aus: [-0.077, ""], eng1: [0.875, "*"],
@@ -580,7 +652,7 @@ var DAAD = (function () {
     ]],
     ["Sprachkenntnisse", [
       { id: "sprache", l: "Bescheinigte Sprachkenntnisse (0–100)", t: "num", m: 88.613, d: 1, min: 70, max: 100, step: 1, v: "sprache", i: "sprache" },
-      { id: "toefl", l: "TOEFL eingereicht", t: "tri", m: 0.562, v: "toefl" }
+      { id: "toefl", l: "Zusätzlicher Sprachtest (zum DAAD-Sprachzeugnis)", t: "tri", m: 0.562, v: "toefl", note: "z. B. TOEFL oder IELTS; die Studie hat den TOEFL ausgewertet" }
     ]],
     ["Ausbildung und Nebentätigkeit", [
       { id: "ausb", l: "Berufsausbildung", t: "tri", m: 0.05, est: true, v: "ausb" },
@@ -590,6 +662,7 @@ var DAAD = (function () {
     ["Anderweitige Förderung", [
       { id: "bafoeg", l: "BAföG-Empfänger", t: "tri", m: 0.226, v: "bafoeg" },
       { id: "sdv", l: "Stipendiat Studienstiftung", t: "tri", m: 0.060, v: "sdv", i: "sdv" },
+      { id: "bf", l: "Stipendium eines anderen Begabtenförderungswerks", t: "tri", m: 0.087, v: "bf", note: "z. B. Konrad-Adenauer- oder Friedrich-Ebert-Stiftung; laut Studie kein messbarer Effekt" },
       { id: "andere", l: "Andere Stipendienbewerbungen", t: "tri", m: 0.421, v: "andere", i: "andere" }
     ]],
     ["Studienvorhaben", [
@@ -601,15 +674,8 @@ var DAAD = (function () {
       { id: "region", l: "Region (Nordamerika)", t: "sel", opts: [["west", "US-West", {}], ["canada", "Kanada", { canada: 1 }], ["midwest", "US-Midwest", { midwest: 1 }], ["northeast", "US-Northeast", { northeast: 1 }], ["south", "US-South", { south: 1 }]], keys: ["canada", "midwest", "northeast", "south"] }
     ]],
     ["Gesellschaftliches Engagement", [
-      { id: "engN", l: "Anzahl Arten", t: "sel", opts: [["none", "Keine", {}], ["one", "Genau eine", { eng1: 1 }], ["multi", "Mehrere", { engM: 1 }]], keys: ["eng1", "engM"] },
-      { id: "e_pol", l: "Politisch", t: "tri", m: 0.177, v: "e_pol" },
-      { id: "e_jug", l: "Jugend, Sport, Freizeit", t: "tri", m: 0.482, v: "e_jug" },
-      { id: "e_kun", l: "Kunst und Kultur", t: "tri", m: 0.228, v: "e_kun" },
-      { id: "e_soz", l: "Sozial", t: "tri", m: 0.248, v: "e_soz" },
-      { id: "e_kir", l: "Kirchlich", t: "tri", m: 0.143, v: "e_kir" },
-      { id: "e_fac", l: "Fachschaft, Fakultät", t: "tri", m: 0.212, v: "e_fac" },
-      { id: "e_sch", l: "Schülervertretung", t: "tri", m: 0.145, v: "e_sch" },
-      { id: "e_aus", l: "Austauschorganisation", t: "tri", m: 0.081, v: "e_aus" },
+      { id: "eng", l: "Bereiche deines Engagements", t: "chips", opts: [["e_pol", "Politisch"], ["e_jug", "Jugend, Sport, Freizeit"], ["e_kun", "Kunst und Kultur"], ["e_soz", "Sozial"],
+        ["e_kir", "Kirchlich"], ["e_fac", "Fachschaft, Fakultät"], ["e_sch", "Schülervertretung"], ["e_aus", "Austauschorganisation"]] },
       { id: "staerke", l: "Stärke des Engagements", t: "sel", iOnly: true, opts: [["keins", "Kein", {}], ["niedrig", "Niedrig", { niedrig: 1 }], ["mittel", "Mittel", { mittel: 1 }], ["hoch", "Hoch", { hoch: 1 }]], keys: ["niedrig", "mittel", "hoch"], means: { niedrig: 0.504, mittel: 0.274, hoch: 0.065 } }
     ]],
     ["Empfehlungsschreiben", [
@@ -642,8 +708,8 @@ var DAAD = (function () {
   function rnd(f) { return Number(f.m.toFixed(f.d)); }
   // Voreinstellung: durchschnittliches Profil, das die Quoten der Studie (54 % / 29 %) annähernd trifft
   var DEF = { abi: 1.9, stud: 2.0, hs: "uni", abschluss: "diplom", anfaenger: "0", sprache: 88.6, toefl: "0", ausb: "0", zbw: "0",
-    job: "ext", bafoeg: "0", sdv: "0", andere: "1", kontakt: "1", fee: 14.76, austausch: "0", privat: "0", top10: "0", region: "west",
-    engN: "one", e_pol: "0", e_jug: "1", e_kun: "0", e_soz: "0", e_kir: "0", e_fac: "0", e_sch: "0", e_aus: "0", staerke: "mittel",
+    job: "ext", bafoeg: "0", sdv: "0", bf: "0", andere: "1", kontakt: "1", fee: 14.76, austausch: "0", privat: "0", top10: "0", region: "west",
+    eng: ["e_jug"], staerke: "mittel",
     urteil: 9.1, prof: "1", kennt: "1", alter: 21.9, weibl: "0", geboren: "1", eltern: "0", brille: "0",
     gutW: "avg", gutAlter: 53.56, slot: "avg", kSize: 4.35, kFrauen: 0.26, kMaenner: "avg", kAlter: 52.42 };
   var UNKNOWN = { gutW: 1, kMaenner: 1, slot: 1 };
@@ -661,19 +727,26 @@ var DAAD = (function () {
       var u = UNIT[f.id] || "";
       meta = '<span class="pill avg">Ø ' + de(f.m, f.d) + "</span>" + '<span class="pill avg">Bereich ' + de(f.min, f.d > 1 ? 1 : 0) + "–" + de(f.max, f.d > 1 ? 1 : 0) + "</span>" + pill("v", "Vorauswahl", f.v ? BV[f.v].b : undefined, f.v ? BV[f.v].s : "", u) + pill("i", "Interview", f.i ? BI[f.i].b : undefined, f.i ? BI[f.i].s : "", u);
     } else if (f.t === "tri") {
-      input = '<span class="seg" role="radiogroup" aria-label="' + lbl + '">' + (UNKNOWN[f.id] ? [["avg", "Unbekannt"], ["1", "Ja"], ["0", "Nein"]] : [["1", "Ja"], ["0", "Nein"]]).map(function (o) {
+      input = '<span class="seg" role="radiogroup" aria-label="' + lbl + '">' + [["1", "Ja"], ["0", "Nein"], ["avg", "Offen"]].map(function (o) {
         return '<label><input type="radio" name="' + id + '" value="' + o[0] + '"' + (o[0] === DEF[f.id] ? " checked" : "") + "><span>" + o[1] + "</span></label>";
       }).join("") + "</span>";
-      meta = '<span class="pill avg">Ø ' + de(f.m * 100, 0) + " % Ja</span>" + pill("v", "Vorauswahl", f.v ? BV[f.v].b : undefined, f.v ? BV[f.v].s : "", "bei Ja") + pill("i", "Interview", f.i ? BI[f.i].b : undefined, f.i ? BI[f.i].s : "", "bei Ja") + (f.est ? '<span class="est">Ø geschätzt</span>' : "");
+      meta = '<span class="pill avg">Ø ' + de(f.m * 100, 0) + " % Ja</span>" + pill("v", "Vorauswahl", f.v ? BV[f.v].b : undefined, f.v ? BV[f.v].s : "", "bei Ja") + pill("i", "Interview", f.i ? BI[f.i].b : undefined, f.i ? BI[f.i].s : "", "bei Ja") + (f.est ? '<span class="est">Ø geschätzt</span>' : "") + (f.note ? '<span class="est">' + f.note + "</span>" : "");
     } else if (f.t === "sel") {
       var tab = f.iOnly ? BI : BV, ref = f.opts[0][1];
       input = '<select id="' + id + '">' + (UNKNOWN[f.id] ? '<option value="avg">Unbekannt</option>' : "") + f.opts.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === DEF[f.id] ? " selected" : "") + ">" + o[1] + "</option>"; }).join("") + "</select>";
       meta = f.opts.slice(1).map(function (o) { var k = Object.keys(o[2])[0]; return pill(f.iOnly ? "i" : "v", o[1], tab[k].b, tab[k].s, ""); }).join("") + '<span class="est">gegenüber ' + ref + (f.iOnly ? ", im Interview" : ", in der Vorauswahl") + "</span>";
+    } else if (f.t === "chips") {
+      input = '<div class="checks" role="group" aria-label="' + lbl + '">' + f.opts.map(function (o) {
+        return '<label><input type="checkbox" name="' + id + '" value="' + o[0] + '"' + (DEF.eng.indexOf(o[0]) >= 0 ? " checked" : "") + "><span>" + o[1] + " <small>" + fmtF(BV[o[0]].b) + "</small></span></label>";
+      }).join("") + "</div>";
+      meta = '<span class="pill avg" id="engCount"></span>' + pill("v", "Genau eine Art", BV.eng1.b, BV.eng1.s, "") + pill("v", "Mehrere Arten", BV.engM.b, BV.engM.s, "") +
+        '<span class="est">gegenüber keinem Engagement, Vorauswahl · Faktor im Feld: Art des Engagements</span>';
     } else if (f.t === "score") {
       input = '<input type="number" id="' + id + '" min="0" max="100" step="0.5" placeholder="automatisch">';
       meta = '<span class="pill avg">Ø 75,4</span>' + pill("i", "Interview", BI.score.b, BI.score.s, "je Punkt") + '<span class="est">leer lassen: wird aus deinen Angaben geschätzt</span>';
     }
-    return '<div class="field"><' + (f.t === "tri" ? 'span class="lbl"' : 'label for="' + id + '"') + ">" + lbl + "</" + (f.t === "tri" ? "span" : "label") + ">" + input + '<div class="meta">' + meta + "</div></div>";
+    var span = f.t === "tri" || f.t === "chips";
+    return '<div class="field' + (f.t === "chips" ? " stack" : "") + '"><' + (span ? 'span class="lbl"' : 'label for="' + id + '"') + ">" + lbl + "</" + (span ? "span" : "label") + ">" + input + '<div class="meta">' + meta + "</div></div>";
   }
   $("inputs").innerHTML = G.map(function (g) {
     var vis = g[1].filter(function (f) { return !HIDDEN[f.id]; });
@@ -684,11 +757,12 @@ var DAAD = (function () {
   var FIELDS = []; G.forEach(function (g) { g[1].forEach(function (f) { FIELDS.push(f); }); });
   function triVal(f) { var c = document.querySelector('input[name="f_' + f.id + '"]:checked'); return c ? c.value : "avg"; }
 
+  function engChecked() { return Array.prototype.map.call(document.querySelectorAll('input[name="f_eng"]:checked'), function (c) { return c.value; }); }
   function readRaw() {
     var raw = {};
     FIELDS.forEach(function (f) {
       if (HIDDEN[f.id]) return;
-      raw[f.id] = f.t === "tri" ? triVal(f) : $("f_" + f.id).value;
+      raw[f.id] = f.t === "tri" ? triVal(f) : f.t === "chips" ? engChecked() : $("f_" + f.id).value;
     });
     return raw;
   }
@@ -701,6 +775,12 @@ var DAAD = (function () {
         return;
       }
       var rv = raw[f.id];
+      if (f.t === "chips") {
+        // Anzahl der Arten aus den angeklickten Bereichen: keine, genau eine oder mehrere
+        if (rv === "avg") { f.opts.forEach(function (o) { v[o[0]] = M[o[0]]; }); v.eng1 = M.eng1; v.engM = M.engM; }
+        else { f.opts.forEach(function (o) { v[o[0]] = rv.indexOf(o[0]) >= 0 ? 1 : 0; }); v.eng1 = rv.length === 1 ? 1 : 0; v.engM = rv.length > 1 ? 1 : 0; }
+        return;
+      }
       if (f.t === "tri") { var y = rv === "avg" ? f.m : parseFloat(rv); if (f.v) v[f.v] = y; if (f.i) i[f.i] = y; }
       else if (f.t === "num") { var x = parseFloat(rv); if (isNaN(x)) x = DEF[f.id]; x = Math.min(f.max, Math.max(f.min, x)); if (f.v) v[f.v] = x; if (f.i) i[f.i] = x; }
       else if (f.t === "sel") {
@@ -733,6 +813,7 @@ var DAAD = (function () {
   function markChanged(raw) {
     FIELDS.forEach(function (f) {
       if (HIDDEN[f.id]) return;
+      if (f.t === "chips") { document.querySelector(".checks").classList.toggle("changed", raw.eng.slice().sort().join() !== DEF.eng.slice().sort().join()); return; }
       if (f.t === "tri") { document.querySelector('input[name="f_' + f.id + '"]').closest(".seg").classList.toggle("changed", raw[f.id] !== DEF[f.id]); return; }
       var el = $("f_" + f.id), ch = f.t === "num" ? Math.abs(parseFloat(raw[f.id]) - DEF[f.id]) > 1e-9 : raw[f.id] !== DEF[f.id];
       el.classList.toggle("changed", ch);
@@ -759,7 +840,15 @@ var DAAD = (function () {
       return '<div class="bar"><span class="name" title="' + p.name + '">' + (NICE[p.key] || p.name) + '</span><span class="track"><span class="seg2" style="left:' + left + "%;width:" + w + "%;background:" + col + '"></span></span></div>';
     }).join("");
   }
+  function engSync(changed) {
+    var n = engChecked().length, st = $("f_staerke");
+    $("engCount").textContent = "Erkannt: " + (n === 0 ? "kein Engagement" : n === 1 ? "genau eine Art" : "mehrere Arten (" + n + ")");
+    if (!changed || !st) return;
+    if (n === 0) st.value = "keins";
+    else if (st.value === "keins") st.value = "niedrig";
+  }
   function render() {
+    engSync(false);
     var r = vectorsCalc();
     $("pV").textContent = pct0(r.pv.p); $("gV").style.width = (r.pv.p * 100).toFixed(1) + "%";
     $("pT").textContent = pct0(r.total); $("gT").style.width = (r.total * 100).toFixed(1) + "%";
@@ -773,16 +862,17 @@ var DAAD = (function () {
   function setView(w) { view = w; $("tabV").setAttribute("aria-pressed", String(w === "v")); $("tabI").setAttribute("aria-pressed", String(w === "i")); render(); }
   $("tabV").addEventListener("click", function () { setView("v"); });
   $("tabI").addEventListener("click", function () { setView("i"); });
+  document.querySelectorAll('input[name="f_eng"]').forEach(function (el) { el.addEventListener("change", function () { engSync(true); render(); }); });
   document.querySelectorAll("#inputs input, #inputs select").forEach(function (el) { el.addEventListener("input", render); el.addEventListener("change", function () { clampInputs(); render(); }); });
 
 
   function fieldBy(id) { return FIELDS.filter(function (f) { return f.id === id; })[0]; }
   function optLabel(id, val) { var f = fieldBy(id), o = f.opts.filter(function (o) { return o[0] === val; })[0]; return o ? o[1] : "–"; }
-  function jn(v) { return v === "1" ? "ja" : "nein"; }
+  function jn(v) { return v === "1" ? "ja" : v === "0" ? "nein" : "offen"; }
   function num(v, d) { var x = parseFloat(v); return isNaN(x) ? "–" : de(x, d); }
   function shareText() {
     var r = readRaw(), res = calc(r);
-    var types = ["e_pol", "e_jug", "e_kun", "e_soz", "e_kir", "e_fac", "e_sch", "e_aus"].filter(function (k) { return r[k] === "1"; }).map(function (k) { return fieldBy(k).l; });
+    var types = fieldBy("eng").opts.filter(function (o) { return r.eng.indexOf(o[0]) >= 0; }).map(function (o) { return o[1]; });
     return [
       "DAAD Masterstipendium – mein Profil im Chancenrechner",
       "",
@@ -790,9 +880,10 @@ var DAAD = (function () {
       "Stipendium insgesamt:    " + pct0(res.total) + " (Durchschnitt Westeuropa 16 %)",
       "",
       "Noten: Abitur " + num(r.abi, 1) + " · Studium " + num(r.stud, 1),
-      "Sprachtest (TOEFL): " + jn(r.toefl),
+      "Zusätzlicher Sprachtest: " + jn(r.toefl),
       "Gutachten: Professor/in " + jn(r.prof) + " · kennt mich gut " + jn(r.kennt),
-      "Engagement: " + ({ none: "keins", one: "in einem Bereich", multi: "in mehreren Bereichen" })[r.engN] + " · Stärke " + optLabel("staerke", r.staerke).toLowerCase(),
+      "Engagement: " + (types.length ? types.join(", ") : "keins") + " · Stärke " + optLabel("staerke", r.staerke).toLowerCase(),
+      "Förderung: Studienstiftung " + jn(r.sdv) + " · anderes Begabtenförderungswerk " + jn(r.bf),
       "Kontakt zur Gasthochschule: " + jn(r.kontakt) + " · weitere Stipendienbewerbungen: " + jn(r.andere),
       "",
       "Geschätzt mit den Modellen der DAAD-Studie „Determinanten der Auswahl“ (Kurze 2013). Grobe Orientierung, keine Prognose."
@@ -824,6 +915,12 @@ var DAAD = (function () {
   var r0 = calc(readRaw());
   $("meanV").textContent = pct0(r0.pv.p); $("meanT").textContent = pct0(r0.total);
   render();
+
+  // Sprungziele der Navigation landen unterhalb der fixierten Ergebnisleiste
+  var resBar = document.querySelector(".results");
+  function setStick() { document.documentElement.style.setProperty("--stick", resBar.offsetHeight + "px"); }
+  setStick();
+  if (window.ResizeObserver) new ResizeObserver(setStick).observe(resBar); else window.addEventListener("resize", setStick);
 })();
 </script>
 </body>
